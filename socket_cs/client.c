@@ -77,6 +77,7 @@ int main(){
     if(strlen(databuf) > 0 && databuf[strlen(databuf) - 1] == '\n')
         databuf[strlen(databuf) - 1] = '\0';
 
+    printf("Sending data to server\n");
     //Send data to server ============================================================================
     int count_w = write(master_conn_socket, databuf, strlen(databuf));
     if(count_w == -1)
