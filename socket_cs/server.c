@@ -46,7 +46,7 @@ int main(){
     //System calls(made by this process to linux kernel) -- socket, bind, listen, accept, read, write etc
 
     //Delete the master socket if still being used by the server process that terminated with failure, signal etc 
-    //Prevents bind failure: addr already in user
+    //Prevents bind failure: addr already in use
     unlink(SOCK_NAME);
 
 
@@ -107,40 +107,40 @@ int main(){
         printf("connection accepted from client, fd assigned is %d\n",client_socket_fd);
 
 
+	int result = 0;
+        int temp_num = 0;
         while(1){   
 
 
-            memset(databuf, 0 ,sizeof(databuf));
+            //memset(databuf, 0 ,sizeof(databuf));
             //How much can be read in a single operation is specified by the variable size_t SSIZE_MAX
             //So, the count must not exceed SSIZE_MAX
             //read count bytes from fd to buffer
             printf("Waiting for service request(data from the client)\n");
 
-            int count = read(client_socket_fd, databuf, MAX_BUFFER_SIZE);
+            //int count = read(client_socket_fd, databuf, MAX_BUFFER_SIZE);
+            int count = read(client_socket_fd, &temp_num, sizeof(int));
             //0 indicates EOF, -1 means error
             if(count == -1)
                 handle_error("read failed");
+	
+            //printf("Count of bytes read is %d, and actual data read is %s\n",count,databuf);
+            printf("Count of bytes read is %d and data read is %d\n",count,temp_num);
 
-
-
-            printf("Count of bytes read is %d, and actual data read is %s\n",count,databuf);
-            //write to fd
-            if(count > 0){ //because if count is 0, then write behaviour is unspecified
-
-                int count_w = write(client_socket_fd, databuf, MAX_BUFFER_SIZE);
-                if(count_w == -1)
-                    handle_error("write failed");
-
-            }
-
-            if(strcasecmp(databuf, "end") == 0){
-                printf("Close request received from client\n");      
-                break;
-            }
-
-
+	    //memcpy(&temp_num, databuf, sizeof(int));
+	    result += temp_num;
+	    if( temp_num == 0 )
+		break;
 
         }
+
+	//ssize_t write(int fd, const void *buf, size_t count);
+	//Send result back to client
+	printf("Final result is %d\n",result);
+	int ret = write(client_socket_fd, &result, sizeof(int));
+	if(ret == -1)
+		handle_error("write failed");
+	printf("No. of bytes written is %d\n",ret);
 
         printf("OUT OF INNER WHILE LOOP\n");
         //close the client data socket
@@ -149,7 +149,8 @@ int main(){
     }
 
     //Close the master socket
-    close(master_conn_socket);
+    close(master_conn_socket);  //Abstract socket path names are automatically removed on closing the socket. If the physical path name is used for socket, then its necessary to unlink it
+    //To create an abstract binding, we specify the first byte of the sun_path field as a null byte (\0)
 
     //Server must free all the resources used by it on termination
 

@@ -43,63 +43,66 @@ void handle_error(char* msg){
 
 int main(){
 
-    //Service Runs
-    errno=0; 
+	//Service Runs
+	errno=0; 
 
-    //Create Master Socket==========================================================================
-    int master_conn_socket;
-    master_conn_socket = socket(AF_UNIX, SOCK_STREAM, 0);    
-    if(master_conn_socket == -1)
-        handle_error("socket call failed");
-    printf("Master socket created\n");
+	//Create Master Socket==========================================================================
+	int master_conn_socket;
+	master_conn_socket = socket(AF_UNIX, SOCK_STREAM, 0);    
+	if(master_conn_socket == -1)
+		handle_error("socket call failed");
+	printf("Master socket created\n");
 
-    struct sockaddr_un myAddr;
-    memset(&myAddr, 0, sizeof(struct sockaddr_un));   /*Clear the structure*/
-    myAddr.sun_family = AF_UNIX;
-    strncpy(myAddr.sun_path, SOCK_NAME, sizeof(myAddr.sun_path) - 1);
+	struct sockaddr_un myAddr;
+	memset(&myAddr, 0, sizeof(struct sockaddr_un));   /*Clear the structure*/
+	myAddr.sun_family = AF_UNIX;
+	strncpy(myAddr.sun_path, SOCK_NAME, sizeof(myAddr.sun_path) - 1);
 
-    printf("sizeof(myAddr.sun_path) is %d\n",sizeof(myAddr.sun_path));
+	printf("sizeof(myAddr.sun_path) is %d\n",sizeof(myAddr.sun_path));
 
-    //Make a connection request to the server ======================================================
-    int ret = connect(master_conn_socket, (const struct sockaddr *) &myAddr, sizeof(struct sockaddr_un));
-    if(ret == -1)
-        handle_error("connect failed...server is down");
-
-
-    char databuf[MAX_BUFFER_SIZE];
-    do{
-
-    memset(databuf, 0, MAX_BUFFER_SIZE);
-    //scanf("%s",databuf);
-    fgets(databuf, MAX_BUFFER_SIZE,stdin);
-
-    //parse data to replace \n by \0
-    if(strlen(databuf) > 0 && databuf[strlen(databuf) - 1] == '\n')
-        databuf[strlen(databuf) - 1] = '\0';
-
-    printf("Sending data to server\n");
-    //Send data to server ============================================================================
-    int count_w = write(master_conn_socket, databuf, strlen(databuf));
-    if(count_w == -1)
-        handle_error("write failed");
-
-    printf("No.of bytes sent is %d, waiting for reply from server\n", count_w);
-
-    //Read response from server =======================================================================
-    int count = read(master_conn_socket, databuf, MAX_BUFFER_SIZE);
-    if(count == -1)
-        handle_error("read failed");
-    printf("data received from server is %s\n",databuf);
-
-    }while(strcasecmp(databuf,"end") != 0);
+	//Make a connection request to the server ======================================================
+	int ret = connect(master_conn_socket, (const struct sockaddr *) &myAddr, sizeof(struct sockaddr_un));
+	if(ret == -1)
+		handle_error("connect failed...server is down");
 
 
-    printf("Closing the connection\n");
-    //Close the master socket
-    close(master_conn_socket);
-    //Server must free all the resources used by it on termination
+	int num = 0;
+	char databuf[MAX_BUFFER_SIZE];
+	do{
 
-    exit(EXIT_SUCCESS); 
+		printf("Enter the number:");
+		scanf("%d",&num);
 
-    return 0;
+		//printf("Number read is %d\n",num);
+		//Send data to server ============================================================================
+		///printf("Sending data to server\n");
+		int count_w = write(master_conn_socket, &num ,sizeof(int));
+		if(count_w == -1)
+			handle_error("write failed");
+
+		//printf("No.of bytes sent is %d\n", count_w);
+		//printf("num is %d\n",num);
+
+	}while(num);
+
+
+	printf("waiting for server result\n");
+	//Read response from server =======================================================================
+	//memset(databuf, 0, MAX_BUFFER_SIZE);
+	int res = 0;
+	int count = read(master_conn_socket, &res, sizeof(int));
+	if(count == -1)
+		handle_error("read failed");
+	//printf("count of bytes read is %d and  data received from server is %s\n",count, databuf);
+	printf("count of bytes read is %d and  data received from server is %d\n",count, res);
+
+
+	printf("Closing the connection\n");
+	//Close the master socket
+	close(master_conn_socket);
+	//Server must free all the resources used by it on termination
+
+	exit(EXIT_SUCCESS); 
+
+	return 0;
 }
