@@ -25,7 +25,7 @@
 #include<sys/un.h>
 #include<string.h>
 
-#define SOCK_NAME "/tmp/DemoSocket"
+#define SOCK_NAME "/tmp/MasterUDSSocket"
 #define MAX_BACKLOG_CONN_REQS 21 
 #define MAX_BUFFER_SIZE 128
 
@@ -95,8 +95,6 @@ int main(){
 		handle_error("read failed");
 	//printf("count of bytes read is %d and  data received from server is %s\n",count, databuf);
 	printf("count of bytes read is %d and  data received from server is %d\n",count, res);
-
-
 	printf("Closing the connection\n");
 	//Close the master socket
 	close(master_conn_socket);

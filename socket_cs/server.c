@@ -25,7 +25,7 @@
 #include<sys/un.h>
 #include<string.h>
 
-#define SOCK_NAME "/tmp/DemoSocket"
+#define SOCK_NAME "/tmp/MasterUDSSocket"
 #define MAX_BACKLOG_CONN_REQS 21 
 #define MAX_BUFFER_SIZE 128
 
@@ -100,7 +100,7 @@ int main(){
 
         //blocking call, corresponding client API call is connect()
         printf("waiting to accept connection request from client\n");
-        client_socket_fd = accept(master_conn_socket, NULL, NULL);     
+        client_socket_fd = accept(master_conn_socket, NULL, NULL);//Who is next in the queue? 
         if(client_socket_fd == -1)
             handle_error("accept failed");
 
