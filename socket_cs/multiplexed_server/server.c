@@ -128,6 +128,7 @@ int main(){
 	FD_ZERO(&readfds);/* Clear the fd_set structure*/
 	
 	init_backup_fd_set();	
+	add_to_backup_fd_set(0);//adding stdin to the list of monitored fds
 	add_to_backup_fd_set(master_fd);	
 
 	while(1){
