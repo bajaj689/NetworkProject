@@ -29,10 +29,18 @@ int main(int argc, char** argv){
 
 	printf("argv[1] is %s\n",argv[1]);
 	//1. Open/Create a mq
-	mqd_t mq_fd = mq_open( argv[1], O_WRONLY | O_CREAT , 0, NULL);
+	mqd_t mq_fd = mq_open( argv[1], O_WRONLY | O_CREAT , 0, NULL); //If attr is NULL, then the queue is created with implementation-defined default attributes.
 	if(mq_fd == -1)
 		handleError("mq_open");
 
+	//mq_getattr can be used to get the attr details
+	struct mq_attr attrset;
+	//int mq_getattr(mqd_t mqdes, struct mq_attr *attr);
+	if(mq_getattr(mq_fd, &attrset) == -1)
+		handleError("mq_getattr");
+
+	printf("Queue attributes read are: Max count: %d, Max size: %d\n",attrset.mq_maxmsg, attrset.mq_msgsize);
+	
 	//2. Send msg to the queue
 	char buffer[BUFFER_SIZE] = {0}; //Max allowed by is 8192
 	int msg_count = MAX_MSG_COUNT;
@@ -44,6 +52,8 @@ int main(int argc, char** argv){
 		fgets(buffer, BUFFER_SIZE, stdin); //To read from fd to buffer
 		//unblocks when msg is available for reading on the queue 
 		if(strcmp(buffer,"end")){
+
+			printf("Lenght of message queued is %d\n",strlen(buffer)); //actual size of the message on the queue will still be mq_msgsize
 			if(mq_send(mq_fd, buffer, strlen(buffer) + 1, 0) == -1)
 				handleError("mq_send");
 		

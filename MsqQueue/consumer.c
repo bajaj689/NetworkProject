@@ -16,7 +16,7 @@
 //		struct mq_attr *attr);
 
 #define PERMISSIONS 0660
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE 8192  //Must be greater than mq_msgsize
 
 void handleError(char* msg){
 
@@ -47,18 +47,21 @@ int main(int argc, char** argv){
 
 	//Check /proc interfaces, /proc/sys/fs/mqueue/
 	//Set the attributes
-	struct mq_attr attrset;
+	/*struct mq_attr attrset;
 	attrset.mq_flags = 0;
 	attrset.mq_maxmsg = 10;
 	attrset.mq_msgsize = 256;
 	attrset.mq_curmsgs = 0;
-
+	*/
 	//1. Open/Create a mq
-	mqd_t mq_fd = mq_open( argv[1], O_RDONLY | O_CREAT, PERMISSIONS, &attrset); 
+	mqd_t mq_fd = mq_open( argv[1], O_RDONLY | O_CREAT, PERMISSIONS, NULL);////If attr is NULL, then the queue is created with implementation-defined default attributes. 
 	if(mq_fd == -1)
 		handleError("mq_open");
 
 	printf("Queue created/opened successfully with fd %d\n",mq_fd);
+
+	//mq_getattr can be used to get the attr details
+	
 	//2. Receive msg to the queue
 	char buffer[BUFFER_SIZE] = {0}; //Max allowed by is 8192
 	fd_set readfds;
