@@ -25,8 +25,7 @@
 #include<sys/un.h>
 #include<string.h>
 
-#define SOCK_NAME "/tmp/MasterUDSSocket"
-#define MAX_BACKLOG_CONN_REQS 21 
+#define SOCK_NAME "/tmp/MasterSocketfd"
 #define MAX_BUFFER_SIZE 128
 
 void handle_error(char* msg){
@@ -58,7 +57,7 @@ int main(){
 	myAddr.sun_family = AF_UNIX;
 	strncpy(myAddr.sun_path, SOCK_NAME, sizeof(myAddr.sun_path) - 1);
 
-	printf("sizeof(myAddr.sun_path) is %d\n",sizeof(myAddr.sun_path));
+	printf("myAddr.sun_path is %s\n",myAddr.sun_path);
 
 	//Make a connection request to the server ======================================================
 	int ret = connect(master_conn_socket, (const struct sockaddr *) &myAddr, sizeof(struct sockaddr_un));

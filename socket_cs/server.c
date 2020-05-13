@@ -25,8 +25,8 @@
 #include<sys/un.h>
 #include<string.h>
 
-#define SOCK_NAME "/tmp/MasterUDSSocket"
-#define MAX_BACKLOG_CONN_REQS 21 
+#define SOCK_NAME "/tmp/MasterSocketfd"
+#define MAX_BACKLOG_CONN_REQS 3 
 #define MAX_BUFFER_SIZE 128
 
 void handle_error(char* msg){
@@ -43,17 +43,16 @@ void handle_error(char* msg){
 
 int main(){
 
-    //System calls(made by this process to linux kernel) -- socket, bind, listen, accept, read, write etc
+    //System calls(made by this process to linux kernel) -- socket, bind, listen, accept, read, write, accept etc
 
     //Delete the master socket if still being used by the server process that terminated with failure, signal etc 
     //Prevents bind failure: addr already in use
-    unlink(SOCK_NAME);
-
+    unlink(SOCK_NAME); //Instead use virtual namespace
 
     //Service Runs
     errno=0; 
 
-    //Create Master Socket
+    //Create Master Socket //This is just an endpoint for communication //It can be used as server(by doing bind, accept, listen) or as client(by doing connect)
     int master_conn_socket;
     master_conn_socket = socket(AF_UNIX, SOCK_STREAM, 0);    
     if(master_conn_socket == -1)
@@ -69,12 +68,13 @@ int main(){
     };
 #endif
 
-    //struct sockaddr_un name; 
     struct sockaddr_un myAddr;
     memset(&myAddr, 0, sizeof(struct sockaddr_un));   /*Clear the structure*/
 
     myAddr.sun_family = AF_UNIX;
     strncpy(myAddr.sun_path, SOCK_NAME, sizeof(myAddr.sun_path) - 1);
+
+    printf("Master socket name is %s\n",myAddr.sun_path);
 
     //Instruction to the OS to send any msg destined for a socket with name /tmp/demosocket to this process
     if(bind(master_conn_socket, (const struct sockaddr *) &myAddr, sizeof(struct sockaddr_un)) == -1) //why typecast?
@@ -89,8 +89,8 @@ int main(){
     if(rt == -1)
         handle_error("listen failed");
 
-    printf("Listen success...Server is now listening for connection requests\n");
-
+    printf("Listen success\n");
+    //Listen success...Coverts socket to passsive from active. It cannot initiate connection requests. It can only listen for connection requests
     char databuf[MAX_BUFFER_SIZE];
 
     while(1){
@@ -106,9 +106,10 @@ int main(){
 
         printf("connection accepted from client, fd assigned is %d\n",client_socket_fd);
 
-
+	//Handling the connection
 	int result = 0;
         int temp_num = 0;
+	int countOfBytesRead = 0;
         while(1){   
 
 
@@ -119,13 +120,24 @@ int main(){
             printf("Waiting for service request(data from the client)\n");
 
             //int count = read(client_socket_fd, databuf, MAX_BUFFER_SIZE);
-            int count = read(client_socket_fd, &temp_num, sizeof(int));
+            countOfBytesRead = read(client_socket_fd, &temp_num, sizeof(int));
             //0 indicates EOF, -1 means error
-            if(count == -1)
+            if(countOfBytesRead == -1){
+
                 handle_error("read failed");
-	
+		close(client_socket_fd);
+		close(master_conn_socket);
+
+	    }
+
+	    if(countOfBytesRead == 0){ //client exited
+		
+		close(client_socket_fd);	
+		result = 0;
+		break;
+	    }	
             //printf("Count of bytes read is %d, and actual data read is %s\n",count,databuf);
-            printf("Count of bytes read is %d and data read is %d\n",count,temp_num);
+            printf("Count of bytes read is %d and data read is %d\n",countOfBytesRead, temp_num);
 
 	    //memcpy(&temp_num, databuf, sizeof(int));
 	    result += temp_num;
@@ -133,6 +145,9 @@ int main(){
 		break;
 
         }
+
+	if(countOfBytesRead == 0)
+		continue; //go to accept() and block again
 
 	//ssize_t write(int fd, const void *buf, size_t count);
 	//Send result back to client
