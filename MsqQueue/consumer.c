@@ -1,9 +1,16 @@
-#include<stdio.h>
+
+//mq_overview - overview of POSIX message queues
+
+/* Author : Ayush Bajaj */
+
+
+#include <stdio.h>
 #include <fcntl.h>           /* For O_* constants */
 #include <sys/stat.h>        /* For mode constants */
 #include <mqueue.h>
 #include <unistd.h>
 #include <stdlib.h>
+
 //mqd_t mq_open(const char *name, int oflag); //oflags means operation flags
 //mqd_t mq_open(const char *name, int oflag, mode_t mode,
 //		struct mq_attr *attr);
@@ -27,7 +34,7 @@ int main(int argc, char** argv){
 		exit(EXIT_FAILURE);
 	}
 
-	printf("argv[1] is %s\n",argv[1]);
+	printf("argv[1] is %s\n",argv[1]); //max length is NAME_MAX
 
 #if 0
 	struct mq_attr {
@@ -38,7 +45,7 @@ int main(int argc, char** argv){
            };
 #endif
 
-	//Check files in  /proc/sys/fs/mqueue/ for all values
+	//Check /proc interfaces, /proc/sys/fs/mqueue/
 	//Set the attributes
 	struct mq_attr attrset;
 	attrset.mq_flags = 0;
@@ -47,7 +54,7 @@ int main(int argc, char** argv){
 	attrset.mq_curmsgs = 0;
 
 	//1. Open/Create a mq
-	mqd_t mq_fd = mq_open( argv[1], O_RDONLY | O_CREAT, PERMISSIONS, &attrset);
+	mqd_t mq_fd = mq_open( argv[1], O_RDONLY | O_CREAT, PERMISSIONS, &attrset); 
 	if(mq_fd == -1)
 		handleError("mq_open");
 
