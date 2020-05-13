@@ -36,6 +36,11 @@ int main(int argc, char** argv){
 
 	printf("argv[1] is %s\n",argv[1]); //max length is NAME_MAX
 
+
+	if(mq_unlink(argv[1]) == -1) //removes the name
+		handleError("mq_unlink");
+
+
 #if 0
 	struct mq_attr {
                long mq_flags;       /* Flags: 0 or O_NONBLOCK */
